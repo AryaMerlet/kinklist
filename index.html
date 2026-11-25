@@ -7,73 +7,160 @@
 <meta name="description" content="Fill in a private preference list and share it with an anonymous link. Everything stays in your browser.">
 <style>
 :root{
-  --bg:#fff; --fg:#111; --muted:#666; --line:#ddd; --panel:#f4f4f6; --accent:#2b4a6f; --accent-fg:#fff;
+  --bg:#E2E2E8; --head:#EEEEEE; --card:#FFFFFF; --fg:#111; --muted:#555; --line:rgba(0,0,0,.2);
+  --shadow:0 1px 3px rgb(0 0 0/12%),0 1px 2px rgb(0 0 0/24%); --accent:#224466; --accent-h:#336699; --hover:rgba(0,0,0,.07);
+  --ring:rgba(0,0,0,.5); --ring-on:#000;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){ --bg:#16171a; --fg:#eee; --muted:#9a9a9a; --line:#333; --panel:#202226; --accent:#5b8cc4; --accent-fg:#fff; }
+  :root:not([data-theme="light"]){ --bg:#17181c; --head:#222328; --card:#2a2b31; --fg:#eee; --muted:#aaa; --line:rgba(255,255,255,.2);
+    --shadow:0 1px 3px rgb(0 0 0/50%); --accent:#3a6ea5; --accent-h:#4b82bd; --hover:rgba(255,255,255,.07); --ring:rgba(255,255,255,.5); --ring-on:#fff; }
 }
-:root[data-theme="dark"]{ --bg:#16171a; --fg:#eee; --muted:#9a9a9a; --line:#333; --panel:#202226; --accent:#5b8cc4; --accent-fg:#fff; }
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-header h1{margin:0;font-size:20px}
-#name{flex:0 1 200px;min-width:120px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit}
-.legend{display:flex;flex-wrap:wrap;gap:4px 12px;flex:1 1 auto}
-.legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.actions{display:flex;flex-wrap:wrap;gap:6px}
-button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:6px 10px}
-button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
-button:focus-visible,.dot:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.banner{margin:12px 16px 0;padding:10px 12px;border:1px solid var(--accent);border-radius:8px;display:none;gap:10px;align-items:center;flex-wrap:wrap}
+:root[data-theme="dark"]{ --bg:#17181c; --head:#222328; --card:#2a2b31; --fg:#eee; --muted:#aaa; --line:rgba(255,255,255,.2);
+  --shadow:0 1px 3px rgb(0 0 0/50%); --accent:#3a6ea5; --accent-h:#4b82bd; --hover:rgba(255,255,255,.07); --ring:rgba(255,255,255,.5); --ring-on:#fff; }
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Arial,Helvetica,sans-serif}
+h1,h2,h3{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent-h);outline-offset:2px}
+
+/* header (v2 layout) */
+.top{background:var(--head);box-shadow:var(--shadow);padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.top h1{font-size:28px}
+.top input#name{height:37px;padding:5px 10px;border:1px solid var(--line);border-radius:5px;background:var(--card);color:var(--fg);font-size:15px;min-width:0;flex:0 1 220px}
+.spacer{flex:1}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:.5em;background:rgba(0,0,0,.1);border-radius:4px;padding:.4em .5em;min-height:37px}
+.pill{display:inline-flex;align-items:center;gap:.3em;background:var(--card);border:1px solid var(--line);border-radius:100vw;padding:.2em .6em .2em .3em;white-space:nowrap}
+.swatch{width:20px;height:20px;border-radius:50%;border:1px solid var(--ring);background:var(--c);flex:none}
+.sq{width:31px;height:31px;border:0;border-radius:3px;background:rgba(0,0,0,.4);color:#fff;font-size:16px;line-height:1}
+.sq:hover{background:#000}
+.btn{height:37px;padding:0 18px;border:0;border-radius:4px;background:var(--accent);color:#fff;font-weight:bold;font-size:15px}
+.btn:hover{background:var(--accent-h)}
+.drop{position:relative}
+.drop .btn{width:37px;padding:0;font-size:18px}
+.menu{position:absolute;right:0;top:calc(100% + 8px);z-index:30;background:var(--card);box-shadow:var(--shadow);border-radius:6px;padding:6px;min-width:230px;display:none}
+.menu.show{display:block}
+.menu button{display:block;width:100%;text-align:left;background:none;border:0;padding:8px 10px;border-radius:4px}
+.menu button:hover{background:var(--hover)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+
+.banner{max-width:1700px;margin:14px auto 0;padding:10px 14px;background:var(--card);border-left:4px solid var(--accent-h);border-radius:4px;box-shadow:var(--shadow);display:none;gap:12px;align-items:center;flex-wrap:wrap}
 .banner.show{display:flex}
-main{padding:16px;columns:250px;column-gap:24px}
-.cat{break-inside:avoid;margin:0 0 18px}
-.cat h2{margin:0;font-size:18px;display:flex;align-items:center;gap:6px}
-.cat .sub{font-style:italic;color:var(--muted);font-size:12px;margin-bottom:4px}
-.row{display:flex;align-items:center;gap:6px;min-height:25px}
-.dots{display:flex;gap:4px;flex:none}
-.dot{width:18px;height:18px;border-radius:50%;border:1px solid #555;padding:0;flex:none}
-.edit-only{display:none}
-body.editing .edit-only{display:inline-block}
-.x{border:none;background:none;color:var(--muted);padding:0 4px;font-size:15px;line-height:1}
-.x:hover{color:#c00}
-#pop{position:absolute;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.25)}
-#pop.show{display:block}
-#pop button{display:flex;align-items:center;gap:8px;width:100%;border:none;background:none;padding:4px 8px;text-align:left}
-#pop button:hover{background:var(--bg)}
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px)}
+
+/* body */
+main{max-width:1700px;margin:0 auto;padding:16px 16px 90px;columns:330px;column-gap:16px}
+.cat{break-inside:avoid;background:var(--card);border-radius:3px;box-shadow:var(--shadow);padding:.5em .6em .4em;margin:0 0 16px;display:inline-block;width:100%}
+.cat-head{display:flex;align-items:center;gap:.25em;margin-bottom:.2em}
+.cat-head h2{flex:1;font-size:21px}
+.ib{width:30px;height:30px;border:0;background:transparent;border-radius:3px;font-size:16px;line-height:1;filter:saturate(0);opacity:.75}
+.ib:hover{filter:none;opacity:1;background:var(--hover)}
+.ib.add{outline:1px solid rgba(0,128,0,.5);outline-offset:-1px;color:#090}
+.ib.edit{outline:1px solid rgba(0,0,228,.4);outline-offset:-1px;color:#33c}
+.ib.del{outline:1px solid rgba(228,0,0,.4);outline-offset:-1px;color:#c00}
+
+.item{position:relative;display:grid;grid-template-columns:1fr auto;grid-template-areas:"name actions" "ratings comment";gap:4px 6px;padding:.3em .1em}
+.item:hover{background:var(--hover);border-radius:3px}
+.item h3{grid-area:name;font-size:16px;font-weight:bold;align-self:center}
+.item-actions{grid-area:actions;display:flex;gap:2px;opacity:0;transition:opacity .15s}
+.item:hover .item-actions,.item:focus-within .item-actions{opacity:1}
+.mini{width:20px;height:20px;border:0;border-radius:25%;color:#fff;font-size:11px;line-height:1;padding:0}
+.mini.edit{background:#36c}.mini.del{background:#f66}.mini.mv{background:#888}
+.ratings{grid-area:ratings;display:flex;flex-wrap:wrap;gap:.3em 1.4em;padding-left:.3em}
+.rgroup{display:flex;flex-direction:column;gap:.2em}
+.rlabel{font-size:12px;color:var(--muted)}
+.rdots{display:flex;gap:4px}
+.rd{position:relative;width:16px;height:16px;border:0;padding:0;background:none;border-radius:50%}
+.rd::before,.rd::after{content:"";position:absolute;inset:0;border-radius:50%}
+.rd::before{background:var(--c);opacity:.3}
+.rd::after{border:1px solid var(--ring)}
+.rd:hover::before{opacity:.7}
+.rd:hover::after,.rd.on::after{border:2px solid var(--ring-on)}
+.rd.on::before{opacity:1}
+.cmt{grid-area:comment;align-self:center;width:30px;height:26px;border:0;background:none;border-radius:6px;font-size:17px;opacity:0;padding:0}
+.item:hover .cmt,.cmt:focus-visible{opacity:.5}
+.cmt:hover,.cmt.has{opacity:1!important}
+.cmt.has{filter:none}
+.cmt:not(.has){filter:grayscale(1)}
+.comment-text{grid-column:1/-1;font-size:13px;color:var(--muted);font-style:italic;padding-left:.3em}
+.empty{color:var(--muted);font-size:13px;padding:.3em}
+
+.fab{position:fixed;right:1em;bottom:1em;width:54px;height:54px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:30px;line-height:1;box-shadow:var(--shadow);z-index:20}
+.fab:hover{background:var(--accent-h)}
+
+body.ro .ib,body.ro .item-actions,body.ro .fab,body.ro .sq,body.ro .owner-only{display:none!important}
+body.ro .rd{cursor:default}
+body.ro .cmt:not(.has){display:none}
+
+/* dialog */
+dialog{border:0;border-radius:6px;padding:0;background:var(--card);color:var(--fg);box-shadow:0 10px 40px rgba(0,0,0,.4);width:min(380px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+dialog form{padding:14px;display:flex;flex-direction:column;gap:10px}
+dialog h3{font-size:18px}
+dialog label{font-weight:bold;font-size:14px;display:block;margin-bottom:4px}
+dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;font-size:15px;padding:.35em .5em;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+dialog textarea{min-height:110px;resize:vertical}
+.drow{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.drow input[type=text]{flex:1}
+.drow input[type=color]{width:36px;height:32px;padding:0;border:1px solid var(--line);border-radius:4px;background:none}
+.dlg-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:4px}
+.dbtn{padding:.4em .8em;border:1px solid var(--line);border-radius:3px;background:var(--card);font-size:15px}
+.dbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:bold}
+.hint{font-size:12px;color:var(--muted)}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);z-index:50}
 .toast.show{opacity:1}
-footer{padding:8px 16px 24px;color:var(--muted);font-size:12px}
-@media (max-width:600px){ header{position:static} }
+footer{max-width:1700px;margin:0 auto;padding:0 16px 24px;color:var(--muted);font-size:12px}
+@media (max-width:700px){ .top{gap:8px} .top h1{font-size:24px} .top input#name{flex:1 1 100%} .spacer{display:none} }
 </style>
 </head>
 <body>
-<header>
+<header class="top">
   <h1>Kinklist</h1>
-  <input id="name" placeholder="Your name (optional)" aria-label="Name">
-  <div class="legend" id="legend"></div>
-  <div class="actions">
-    <button class="primary" id="btnLink">Get link</button>
-    <button id="btnPng">Download image</button>
-    <button id="btnEdit" aria-pressed="false">Edit list</button>
-    <button id="btnReset">Reset</button>
+  <input id="name" placeholder="Enter username" aria-label="Username">
+  <div class="spacer"></div>
+  <div class="legend">
+    <button class="sq" id="btnRatings" title="Edit ratings" aria-label="Edit ratings">✎</button>
+    <div id="legend" style="display:contents"></div>
+  </div>
+  <button class="btn" id="btnLink">Share link</button>
+  <button class="btn" id="btnPng">Download</button>
+  <div class="drop">
+    <button class="btn" id="btnMenu" aria-haspopup="true" aria-expanded="false" title="Options" aria-label="Options">⌄</button>
+    <div class="menu" id="menu" role="menu">
+      <button data-m="theme">Toggle dark / light</button>
+      <hr class="owner-only">
+      <button data-m="exportList" class="owner-only">Save list template (file)</button>
+      <button data-m="importList" class="owner-only">Load list template (file)</button>
+      <hr class="owner-only">
+      <button data-m="clearAnswers" class="owner-only">Clear my answers</button>
+      <button data-m="restore" class="owner-only">Restore default list</button>
+      <hr>
+      <button data-m="about">About</button>
+    </div>
   </div>
 </header>
 <div class="banner" id="banner">
   <span id="bannerText"></span>
-  <button id="btnOwn">Start my own list</button>
+  <button class="dbtn primary" id="btnOwn">Start my own list</button>
 </div>
 <main id="list"></main>
-<footer>
-  Everything stays in your browser. The share link holds your answers inside the link itself; no server stores them.
-  Based on the idea of KinkList by Goctionni (MIT) and KinkSheet.
-  <span class="edit-only"><br><button id="btnAddCat">+ Add category</button></span>
-</footer>
-<div id="pop" role="menu"></div>
+<footer>Everything stays in your browser. "Share link" packs your answers into the link itself; no server stores them.</footer>
+<button class="fab" id="btnAddCat" title="Add category" aria-label="Add category">+</button>
+<input type="file" id="fileIn" accept="application/json,.json" hidden>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <h3 id="dlgTitle"></h3>
+    <div id="dlgBody"></div>
+    <div class="dlg-actions">
+      <button class="dbtn" value="cancel" id="dlgCancel">Cancel</button>
+      <button class="dbtn primary" value="ok" id="dlgOk">OK</button>
+    </div>
+  </form>
+</dialog>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
-const RATINGS = [
+const DEFAULT_RATINGS = [
   { name: 'Not Entered', color: '#FFFFFF' },
   { name: 'Favorite',    color: '#6DB5FE' },
   { name: 'Like',        color: '#23FD22' },
@@ -82,7 +169,7 @@ const RATINGS = [
   { name: 'No',          color: '#920000' },
 ];
 
-// [name, columns, items]
+// [name, columns, items] — order matters for old share links
 const DEFAULT_LIST = [
   ['Intimacy', ['General'], ['Romance / Affection','Hugging','Kissing (body)','Kissing (mouth)','Spooning','Using real names','Sleepover']],
   ['Bodies', ['Self','Partner'], ['Skinny','Chubby','Muscle','Small breasts','Large breasts','Small cocks','Large cocks']],
@@ -106,144 +193,311 @@ const DEFAULT_LIST = [
   ['Pain', ['Giving','Receiving'], ['Light pain','Heavy pain','Hickies','Nipple clamps','Clothes pins','Breast torture','Caning','Flogging','Whips','Paddles','Beating','Spanking','Slapping (body)','Slapping (face)','Cock/Pussy slapping','Cock/Pussy torture','Hot wax','Scratching','Biting','Burning','Cutting','Bruising (short-lasting)','Markings (long-lasting)']],
 ];
 
-const STORE_KEY = 'kinklist-v1';
-let state;          // { name, list:[[name,cols,items]], r: {key: ratingIndex} }
-let viewingShared = false;
-
+const STORE = 'kinklist-v2', OLD_STORE = 'kinklist-v1', THEME = 'kinklist-theme';
 const $ = (id) => document.getElementById(id);
 const clone = (x) => JSON.parse(JSON.stringify(x));
-const key = (c, i, s) => c + '\u0001' + i + '\u0001' + s;
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function freshState(){ return { name: '', list: clone(DEFAULT_LIST), r: {} }; }
+/* state = { name, ratings:[{name,color}], list:[{id,name,cols:[],items:[{id,name,v:[],c?}]}] } */
+let state, readOnly = false;
 
-function save(){
-  if (viewingShared) return;
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e) {}
+function fromArrays(arr, ratingsFn){
+  return arr.map(([name, cols, items]) => ({
+    id: uid(), name, cols: [...cols],
+    items: items.map(it => {
+      const [iname, c] = Array.isArray(it) ? it : [it];
+      const o = { id: uid(), name: iname, v: cols.map((col) => ratingsFn ? ratingsFn(name, iname, col) : 0) };
+      if (c) o.c = c;
+      return o;
+    }),
+  }));
 }
+const freshState = () => ({ name: '', ratings: clone(DEFAULT_RATINGS), list: fromArrays(DEFAULT_LIST) });
+
+function save(){ if (readOnly) return; try { localStorage.setItem(STORE, JSON.stringify(state)); } catch(e){} }
+function valid(s){ return s && Array.isArray(s.list) && Array.isArray(s.ratings) && s.ratings.length; }
 function load(){
-  try {
-    const s = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (s && Array.isArray(s.list) && s.r) return s;
-  } catch(e) {}
+  try { const s = JSON.parse(localStorage.getItem(STORE)); if (valid(s)) return s; } catch(e){}
+  try { // migrate from the first version of the page
+    const o = JSON.parse(localStorage.getItem(OLD_STORE));
+    if (o && Array.isArray(o.list) && o.r) {
+      const s = { name: o.name || '', ratings: clone(DEFAULT_RATINGS),
+        list: fromArrays(o.list, (c, i, col) => o.r[c + '\u0001' + i + '\u0001' + col] || 0) };
+      localStorage.setItem(STORE, JSON.stringify(s));
+      return s;
+    }
+  } catch(e){}
   return freshState();
 }
 
-/* ---------- rendering ---------- */
+/* ---------------- render ---------------- */
 function renderLegend(){
-  $('legend').innerHTML = RATINGS.map(r =>
-    `<span><span class="dot" style="background:${r.color}"></span>${r.name}</span>`).join('');
+  $('legend').innerHTML = state.ratings.map(r =>
+    `<span class="pill"><span class="swatch" style="--c:${esc(r.color)}"></span>${esc(r.name)}</span>`).join('');
 }
-function esc(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
 function render(){
+  renderLegend();
   $('name').value = state.name || '';
-  const out = [];
-  state.list.forEach(([cat, cols, items], ci) => {
-    out.push(`<section class="cat"><h2>${esc(cat)}
-      <button class="x edit-only" data-act="delcat" data-ci="${ci}" title="Delete category" aria-label="Delete category ${esc(cat)}">✕</button></h2>
-      <div class="sub">${cols.map(esc).join(', ')}</div>`);
-    items.forEach((item, ii) => {
-      out.push(`<div class="row"><span class="dots">`);
-      cols.forEach((col) => {
-        const v = state.r[key(cat, item, col)] || 0;
-        out.push(`<button class="dot" data-k="${esc(key(cat,item,col))}" style="background:${RATINGS[v].color}"
-          aria-label="${esc(item)} – ${esc(col)}: ${RATINGS[v].name}" title="${esc(col)}: ${RATINGS[v].name}"></button>`);
-      });
-      out.push(`</span><span>${esc(item)}</span>
-        <button class="x edit-only" data-act="delitem" data-ci="${ci}" data-ii="${ii}" title="Delete item" aria-label="Delete ${esc(item)}">✕</button></div>`);
-    });
-    out.push(`<button class="edit-only" data-act="additem" data-ci="${ci}" style="margin-top:4px">+ Add item</button></section>`);
-  });
-  $('list').innerHTML = out.join('');
+  $('name').disabled = readOnly;
+  document.body.classList.toggle('ro', readOnly);
+  const R = state.ratings;
+  $('list').innerHTML = state.list.map((cat, ci) => `
+    <section class="cat">
+      <div class="cat-head">
+        <h2>${esc(cat.name)}</h2>
+        <button class="ib add" data-a="addItem" data-ci="${ci}" title="Add item" aria-label="Add item to ${esc(cat.name)}">＋</button>
+        <button class="ib edit" data-a="editCat" data-ci="${ci}" title="Edit category" aria-label="Edit category ${esc(cat.name)}">✎</button>
+        <button class="ib del" data-a="delCat" data-ci="${ci}" title="Remove category" aria-label="Remove category ${esc(cat.name)}">✕</button>
+      </div>
+      ${cat.items.length ? '' : '<div class="empty">No items yet. Use ＋ to add some.</div>'}
+      ${cat.items.map((it, ii) => `
+        <div class="item">
+          <h3>${esc(it.name)}</h3>
+          <div class="item-actions">
+            <button class="mini mv" data-a="up" data-ci="${ci}" data-ii="${ii}" title="Move up" aria-label="Move ${esc(it.name)} up">▲</button>
+            <button class="mini mv" data-a="down" data-ci="${ci}" data-ii="${ii}" title="Move down" aria-label="Move ${esc(it.name)} down">▼</button>
+            <button class="mini edit" data-a="editItem" data-ci="${ci}" data-ii="${ii}" title="Edit item" aria-label="Edit ${esc(it.name)}">✎</button>
+            <button class="mini del" data-a="delItem" data-ci="${ci}" data-ii="${ii}" title="Remove item" aria-label="Remove ${esc(it.name)}">✕</button>
+          </div>
+          <div class="ratings">
+            ${cat.cols.map((col, k) => `
+              <div class="rgroup">
+                ${cat.cols.length > 1 ? `<div class="rlabel">${esc(col)}</div>` : ''}
+                <div class="rdots" role="radiogroup" aria-label="${esc(it.name)}${cat.cols.length > 1 ? ' – ' + esc(col) : ''}">
+                  ${R.map((r, ri) => `<button class="rd${(it.v[k] || 0) === ri ? ' on' : ''}" style="--c:${esc(r.color)}"
+                      role="radio" aria-checked="${(it.v[k] || 0) === ri}" title="${esc(r.name)}" aria-label="${esc(r.name)}"
+                      data-a="rate" data-ci="${ci}" data-ii="${ii}" data-k="${k}" data-r="${ri}"></button>`).join('')}
+                </div>
+              </div>`).join('')}
+          </div>
+          <button class="cmt${it.c ? ' has' : ''}" data-a="comment" data-ci="${ci}" data-ii="${ii}"
+            title="${it.c ? 'View / edit comment' : 'Add comment'}" aria-label="${it.c ? 'Comment' : 'Add comment'} for ${esc(it.name)}">💬</button>
+          ${it.c ? `<div class="comment-text">${esc(it.c)}</div>` : ''}
+        </div>`).join('')}
+    </section>`).join('');
 }
 
-/* ---------- rating popover ---------- */
-let popKey = null;
-function openPop(btn){
-  popKey = btn.dataset.k;
-  const pop = $('pop');
-  pop.innerHTML = RATINGS.map((r, i) =>
-    `<button data-v="${i}" role="menuitem"><span class="dot" style="background:${r.color}"></span>${r.name}</button>`).join('');
-  const rc = btn.getBoundingClientRect();
-  pop.classList.add('show');
-  const w = pop.offsetWidth, h = pop.offsetHeight;
-  let left = rc.left + window.scrollX;
-  let top = rc.bottom + window.scrollY + 4;
-  left = Math.min(left, window.scrollX + document.documentElement.clientWidth - w - 8);
-  if (rc.bottom + h + 8 > window.innerHeight) top = rc.top + window.scrollY - h - 4;
-  pop.style.left = Math.max(8, left) + 'px';
-  pop.style.top = top + 'px';
-  pop.querySelector('button').focus();
+/* ---------------- dialog helper ---------------- */
+let dlgOk = null;
+function dialog(title, html, onOk, { ok = 'OK', cancel = true } = {}){
+  $('dlgTitle').textContent = title;
+  $('dlgBody').innerHTML = html;
+  $('dlgOk').textContent = ok;
+  $('dlgCancel').style.display = cancel ? '' : 'none';
+  dlgOk = onOk;
+  $('dlg').returnValue = '';
+  $('dlg').showModal();
+  const f = $('dlgBody').querySelector('input[type=text],textarea');
+  if (f) { f.focus(); f.select && f.select(); }
 }
-function closePop(){ $('pop').classList.remove('show'); popKey = null; }
-
-$('pop').addEventListener('click', (e) => {
-  const b = e.target.closest('button[data-v]');
-  if (!b || popKey == null) return;
-  const v = +b.dataset.v;
-  if (v === 0) delete state.r[popKey]; else state.r[popKey] = v;
-  const k = popKey;
-  closePop(); save(); render();
-  const again = [...document.querySelectorAll('.dot[data-k]')].find(d => d.dataset.k === k);
-  if (again) again.focus();
+$('dlg').addEventListener('close', () => {
+  if ($('dlg').returnValue === 'ok' && dlgOk) dlgOk($('dlgBody'));
+  dlgOk = null;
 });
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('#pop') && !e.target.closest('.dot[data-k]')) closePop();
-});
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePop(); });
-
-$('list').addEventListener('click', (e) => {
-  const dot = e.target.closest('.dot[data-k]');
-  if (dot) {
-    if (viewingShared) { toast('This is a shared list. Click "Start my own list" to fill in yours.'); return; }
-    e.stopPropagation(); openPop(dot); return;
-  }
-  const b = e.target.closest('button[data-act]');
+// add / remove rows inside dialogs
+$('dlgBody').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-d]');
   if (!b) return;
-  const ci = +b.dataset.ci;
-  if (b.dataset.act === 'delcat') {
-    if (confirm(`Delete the category "${state.list[ci][0]}"?`)) { state.list.splice(ci, 1); save(); render(); }
-  } else if (b.dataset.act === 'delitem') {
-    state.list[ci][2].splice(+b.dataset.ii, 1); save(); render();
-  } else if (b.dataset.act === 'additem') {
-    const n = (prompt('New item name:') || '').trim();
-    if (n && !state.list[ci][2].includes(n)) { state.list[ci][2].push(n); save(); render(); }
+  e.preventDefault();
+  if (b.dataset.d === 'delRow') b.closest('.drow').remove();
+  if (b.dataset.d === 'addCol') $('cols').insertAdjacentHTML('beforeend', colRow('', -1));
+  if (b.dataset.d === 'addRating') $('rrows').insertAdjacentHTML('beforeend', ratingRow({ name: '', color: '#999999' }, -1));
+});
+const colRow = (v, orig) => `<div class="drow" data-orig="${orig}"><input type="text" value="${esc(v)}" aria-label="Column name"><button class="dbtn" type="button" data-d="delRow" aria-label="Remove column">✕</button></div>`;
+const ratingRow = (r, orig) => `<div class="drow" data-orig="${orig}"><input type="color" value="${esc(r.color)}" aria-label="Color"><input type="text" value="${esc(r.name)}" aria-label="Rating name"><button class="dbtn" type="button" data-d="delRow" aria-label="Remove rating">✕</button></div>`;
+
+/* ---------------- categories ---------------- */
+function categoryDialog(ci){
+  const cat = ci == null ? { name: '', cols: ['General'] } : state.list[ci];
+  const n = state.list.length + (ci == null ? 1 : 0);
+  const pos = ci == null ? n - 1 : ci;
+  dialog(ci == null ? 'New category' : 'Edit category', `
+    <label for="cname">Category name</label>
+    <input type="text" id="cname" value="${esc(cat.name)}">
+    <div style="display:flex;align-items:center;margin-top:12px"><label style="flex:1;margin:0">Columns</label>
+      <button class="dbtn" type="button" data-d="addCol">＋ Add column</button></div>
+    <div class="hint" style="margin:4px 0 6px">e.g. Self / Partner, Giving / Receiving. One column = a single rating per item.</div>
+    <div id="cols">${cat.cols.map((c, i) => colRow(c, ci == null ? -1 : i)).join('')}</div>
+    <label for="cpos" style="margin-top:12px">Position</label>
+    <select id="cpos">${Array.from({ length: n }, (_, i) => `<option value="${i}"${i === pos ? ' selected' : ''}>${i + 1}${i === 0 ? ' (first)' : i === n - 1 ? ' (last)' : ''}</option>`).join('')}</select>
+  `, (b) => {
+    const name = b.querySelector('#cname').value.trim();
+    if (!name) { toast('A category needs a name.'); return; }
+    let cols = [...b.querySelectorAll('#cols .drow')].map(r => ({ name: r.querySelector('input').value.trim(), orig: +r.dataset.orig })).filter(c => c.name);
+    if (!cols.length) cols = [{ name: 'General', orig: -1 }];
+    let target;
+    if (ci == null) { target = { id: uid(), name, cols: [], items: [] }; state.list.push(target); ci = state.list.length - 1; }
+    else target = state.list[ci];
+    target.name = name;
+    target.items.forEach(it => { it.v = cols.map(c => c.orig >= 0 ? (it.v[c.orig] || 0) : 0); });
+    target.cols = cols.map(c => c.name);
+    const np = +b.querySelector('#cpos').value;
+    if (np !== ci) { state.list.splice(ci, 1); state.list.splice(np, 0, target); }
+    save(); render();
+  });
+}
+$('btnAddCat').addEventListener('click', () => categoryDialog(null));
+
+/* ---------------- items ---------------- */
+function addItems(ci){
+  dialog(`Add items to "${state.list[ci].name}"`, `
+    <label for="inames">Item names</label>
+    <textarea id="inames" placeholder="One item per line"></textarea>
+    <div class="hint">Tip: paste several lines to add many items at once.</div>`, (b) => {
+    const cat = state.list[ci];
+    const names = b.querySelector('#inames').value.split('\n').map(s => s.trim()).filter(Boolean);
+    let added = 0;
+    names.forEach(n => { if (!cat.items.some(i => i.name === n)) { cat.items.push({ id: uid(), name: n, v: cat.cols.map(() => 0) }); added++; } });
+    if (added) { save(); render(); toast(`${added} item${added > 1 ? 's' : ''} added.`); }
+  }, { ok: 'Add' });
+}
+function editItem(ci, ii){
+  const it = state.list[ci].items[ii];
+  dialog('Edit item', `
+    <label for="iname">Item name</label>
+    <input type="text" id="iname" value="${esc(it.name)}">
+    <label for="icat" style="margin-top:12px">Category</label>
+    <select id="icat">${state.list.map((c, i) => `<option value="${i}"${i === ci ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
+    <div class="hint" style="margin-top:4px">Moving to a category with different columns resets this item's answers.</div>`, (b) => {
+    const n = b.querySelector('#iname').value.trim();
+    if (!n) { toast('An item needs a name.'); return; }
+    it.name = n;
+    const nc = +b.querySelector('#icat').value;
+    if (nc !== ci) {
+      const from = state.list[ci], to = state.list[nc];
+      from.items.splice(ii, 1);
+      if (JSON.stringify(from.cols) !== JSON.stringify(to.cols)) it.v = to.cols.map(() => 0);
+      to.items.push(it);
+    }
+    save(); render();
+  });
+}
+function commentDialog(ci, ii){
+  const it = state.list[ci].items[ii];
+  if (readOnly) { dialog(it.name, `<p style="margin:0;white-space:pre-wrap">${esc(it.c || '')}</p>`, null, { ok: 'Close', cancel: false }); return; }
+  dialog(`Comment – ${it.name}`, `<textarea id="ctext" placeholder="Details, limits, conditions…">${esc(it.c || '')}</textarea>
+    <div class="hint">Comments are included in your share link.</div>`, (b) => {
+    const c = b.querySelector('#ctext').value.trim();
+    if (c) it.c = c; else delete it.c;
+    save(); render();
+  }, { ok: 'Save' });
+}
+
+/* ---------------- ratings (legend) ---------------- */
+$('btnRatings').addEventListener('click', () => {
+  dialog('Edit ratings', `
+    <div class="hint" style="margin-bottom:8px">The first rating is the default ("not answered") state. Removed ratings reset those answers to it.</div>
+    <div id="rrows">${state.ratings.map((r, i) => ratingRow(r, i)).join('')}</div>
+    <button class="dbtn" type="button" data-d="addRating">＋ Add rating</button>`, (b) => {
+    const rows = [...b.querySelectorAll('#rrows .drow')].map(r => ({
+      color: r.querySelector('input[type=color]').value, name: r.querySelector('input[type=text]').value.trim(), orig: +r.dataset.orig,
+    })).filter(r => r.name);
+    if (rows.length < 2) { toast('Keep at least 2 ratings.'); return; }
+    if (rows.length > 36) { toast('At most 36 ratings.'); return; }
+    const map = {}; rows.forEach((r, i) => { if (r.orig >= 0) map[r.orig] = i; });
+    state.list.forEach(c => c.items.forEach(it => { it.v = it.v.map(v => map[v] ?? 0); }));
+    state.ratings = rows.map(r => ({ name: r.name, color: r.color }));
+    save(); render();
+  });
+});
+
+/* ---------------- list clicks ---------------- */
+$('list').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-a]');
+  if (!b) return;
+  const ci = +b.dataset.ci, ii = +b.dataset.ii, a = b.dataset.a;
+  if (a === 'comment') return commentDialog(ci, ii);
+  if (readOnly) { if (a === 'rate') toast('This is a shared list. Click "Start my own list" to fill in yours.'); return; }
+  const cat = state.list[ci];
+  if (a === 'rate') {
+    cat.items[ii].v[+b.dataset.k] = +b.dataset.r; save();
+    b.parentElement.querySelectorAll('.rd').forEach(d => { const on = d === b; d.classList.toggle('on', on); d.setAttribute('aria-checked', on); });
   }
-});
-
-$('btnAddCat').addEventListener('click', () => {
-  const n = (prompt('Category name:') || '').trim();
-  if (!n) return;
-  if (state.list.some(c => c[0] === n)) { toast('That category already exists.'); return; }
-  const cols = (prompt('Columns, separated by commas:', 'Self, Partner') || '').split(',').map(s => s.trim()).filter(Boolean);
-  state.list.push([n, cols.length ? cols : ['General'], []]); save(); render();
-});
-
-$('btnEdit').addEventListener('click', () => {
-  if (viewingShared) { toast('Start your own list first.'); return; }
-  const on = document.body.classList.toggle('editing');
-  $('btnEdit').setAttribute('aria-pressed', on);
-  $('btnEdit').textContent = on ? 'Done editing' : 'Edit list';
-});
-$('btnReset').addEventListener('click', () => {
-  if (!confirm('Clear all answers and restore the default list?')) return;
-  state = freshState(); viewingShared = false; history.replaceState(null, '', location.pathname); $('banner').classList.remove('show');
-  save(); render();
+  else if (a === 'addItem') addItems(ci);
+  else if (a === 'editCat') categoryDialog(ci);
+  else if (a === 'delCat') {
+    dialog('Remove category', `<p style="margin:0">Remove "${esc(cat.name)}" and its ${cat.items.length} items?</p>`, () => { state.list.splice(ci, 1); save(); render(); }, { ok: 'Remove' });
+  }
+  else if (a === 'editItem') editItem(ci, ii);
+  else if (a === 'delItem') { cat.items.splice(ii, 1); save(); render(); }
+  else if (a === 'up' || a === 'down') {
+    const j = a === 'up' ? ii - 1 : ii + 1;
+    if (j < 0 || j >= cat.items.length) return;
+    [cat.items[ii], cat.items[j]] = [cat.items[j], cat.items[ii]]; save(); render();
+    const again = $('list').querySelector(`button[data-a="${a}"][data-ci="${ci}"][data-ii="${j}"]`); if (again) again.focus();
+  }
 });
 $('name').addEventListener('input', (e) => { state.name = e.target.value; save(); });
 
-/* ---------- share link: answers packed into the URL hash ---------- */
-function b64url(bytes){ let s=''; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
-function unb64url(str){ const s = atob(str.replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+/* ---------------- options menu ---------------- */
+function toggleMenu(show){ $('menu').classList.toggle('show', show); $('btnMenu').setAttribute('aria-expanded', show); }
+$('btnMenu').addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(!$('menu').classList.contains('show')); });
+document.addEventListener('click', (e) => { if (!e.target.closest('.drop')) toggleMenu(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleMenu(false); });
+$('menu').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-m]'); if (!b) return;
+  toggleMenu(false);
+  const m = b.dataset.m;
+  if (m === 'theme') {
+    const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next; try { localStorage.setItem(THEME, next); } catch(e){}
+  }
+  if (m === 'clearAnswers') dialog('Clear my answers', '<p style="margin:0">Reset every answer and comment? Your categories and items stay.</p>', () => {
+    state.list.forEach(c => c.items.forEach(it => { it.v = c.cols.map(() => 0); delete it.c; })); save(); render();
+  }, { ok: 'Clear' });
+  if (m === 'restore') dialog('Restore default list', '<p style="margin:0">Replace your categories, items and ratings with the default list? Your answers on items that still exist are kept.</p>', () => {
+    const old = {}; state.list.forEach(c => c.items.forEach(it => c.cols.forEach((col, k) => { old[c.name + '|' + it.name + '|' + col] = it.v[k]; })));
+    const keep = JSON.stringify(state.ratings) === JSON.stringify(DEFAULT_RATINGS);
+    state.ratings = clone(DEFAULT_RATINGS);
+    state.list = fromArrays(DEFAULT_LIST, (c, i, col) => keep ? (old[c + '|' + i + '|' + col] || 0) : 0);
+    save(); render();
+  }, { ok: 'Restore' });
+  if (m === 'exportList') {
+    const tpl = { kinklistTemplate: 1, ratings: state.ratings, list: state.list.map(c => [c.name, c.cols, c.items.map(i => i.name)]) };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(tpl, null, 1)], { type: 'application/json' }));
+    a.download = 'kinklist-template.json'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('Template saved (list only, no answers).');
+  }
+  if (m === 'importList') $('fileIn').click();
+  if (m === 'about') dialog('About', `<p style="margin:0 0 8px">A private preference list. Rate each item, add comments, and share a link with partners.</p>
+    <p style="margin:0 0 8px">Nothing is sent to a server: your list is saved in this browser, and the share link carries your answers inside the link itself.</p>
+    <p style="margin:0" class="hint">Inspired by KinkList by Goctionni and by KinkSheet.</p>`, null, { ok: 'Close', cancel: false });
+});
+$('fileIn').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try {
+    const t = JSON.parse(await f.text());
+    if (!t.kinklistTemplate || !Array.isArray(t.list) || !Array.isArray(t.ratings)) throw 0;
+    dialog('Load template', `<p style="margin:0">Replace your list with "${esc(f.name)}" (${t.list.length} categories)? Answers on items with the same name are kept.</p>`, () => {
+      const old = {}; state.list.forEach(c => c.items.forEach(it => c.cols.forEach((col, k) => { old[c.name + '|' + it.name + '|' + col] = it.v[k]; })));
+      const keep = JSON.stringify(state.ratings) === JSON.stringify(t.ratings);
+      state.ratings = t.ratings.slice(0, 36).map(r => ({ name: String(r.name), color: String(r.color) }));
+      state.list = fromArrays(t.list, (c, i, col) => keep ? (old[c + '|' + i + '|' + col] || 0) : 0);
+      save(); render();
+    }, { ok: 'Load' });
+  } catch(_) { toast('That file is not a Kinklist template.'); }
+});
+
+/* ---------------- share link (answers live in the URL hash) ---------------- */
+function b64url(bytes){ let s = ''; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function unb64url(str){ const s = atob(str.replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(s, c => c.charCodeAt(0)); }
 async function pipe(bytes, stream){ return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer()); }
+const shape = (list) => JSON.stringify(list.map(c => [c.name, c.cols, c.items.map(i => i.name)]));
+const DEFAULT_SHAPE = JSON.stringify(DEFAULT_LIST);
 
 async function encodeState(){
-  // ratings as one digit per cell, in list order
-  let digits = '';
-  state.list.forEach(([cat, cols, items]) => items.forEach(item => cols.forEach(col => digits += (state.r[key(cat,item,col)] || 0))));
-  const custom = JSON.stringify(state.list) !== JSON.stringify(DEFAULT_LIST);
-  const payload = JSON.stringify(custom ? { n: state.name, l: state.list, d: digits } : { n: state.name, d: digits });
-  let bytes = new TextEncoder().encode(payload), tag = 'r';
+  let d = '';
+  state.list.forEach(c => c.items.forEach(it => c.cols.forEach((_, k) => d += (it.v[k] || 0).toString(36))));
+  const p = { n: state.name, d };
+  const hasComments = state.list.some(c => c.items.some(i => i.c));
+  if (hasComments || shape(state.list) !== DEFAULT_SHAPE) p.l = state.list.map(c => [c.name, c.cols, c.items.map(i => i.c ? [i.name, i.c] : i.name)]);
+  if (JSON.stringify(state.ratings) !== JSON.stringify(DEFAULT_RATINGS)) p.t = state.ratings.map(r => [r.name, r.color]);
+  let bytes = new TextEncoder().encode(JSON.stringify(p)), tag = 'r';
   if (typeof CompressionStream !== 'undefined') { bytes = await pipe(bytes, new CompressionStream('deflate-raw')); tag = 'z'; }
   return tag + b64url(bytes);
 }
@@ -251,50 +505,47 @@ async function decodeHash(h){
   let bytes = unb64url(h.slice(1));
   if (h[0] === 'z') bytes = await pipe(bytes, new DecompressionStream('deflate-raw'));
   const p = JSON.parse(new TextDecoder().decode(bytes));
-  const list = p.l || clone(DEFAULT_LIST);
-  const r = {}; let i = 0;
-  list.forEach(([cat, cols, items]) => items.forEach(item => cols.forEach(col => {
-    const v = +p.d[i++] || 0; if (v > 0 && v < RATINGS.length) r[key(cat,item,col)] = v;
-  })));
-  return { name: p.n || '', list, r };
+  const ratings = p.t ? p.t.map(([name, color]) => ({ name, color })) : clone(DEFAULT_RATINGS);
+  let i = 0;
+  const list = fromArrays(p.l || DEFAULT_LIST, () => { const v = parseInt(p.d[i++] || '0', 36) || 0; return v < ratings.length ? v : 0; });
+  return { name: p.n || '', ratings, list };
 }
-
 $('btnLink').addEventListener('click', async () => {
   const url = location.href.split('#')[0] + '#' + await encodeState();
-  try { await navigator.clipboard.writeText(url); toast('Link copied. Anyone with it can see your answers.'); }
-  catch(e) { prompt('Copy this link:', url); }
+  try { await navigator.clipboard.writeText(url); toast('Link copied. Anyone with this link can see your answers.'); }
+  catch(e) { dialog('Your share link', `<input type="text" value="${esc(url)}" readonly aria-label="Share link"><div class="hint" style="margin-top:6px">Copy it and send it privately.</div>`, null, { ok: 'Close', cancel: false }); }
 });
 $('btnOwn').addEventListener('click', () => {
-  viewingShared = false; state = load(); history.replaceState(null, '', location.pathname);
+  readOnly = false; state = load(); history.replaceState(null, '', location.pathname + location.search);
   $('banner').classList.remove('show'); render();
 });
+window.addEventListener('hashchange', () => { if (location.hash.length > 1) location.reload(); });
 
-/* ---------- PNG export ---------- */
+/* ---------------- PNG export ---------------- */
 $('btnPng').addEventListener('click', () => {
-  const COLW = 250, PAD = 16, ROW = 25, D = 9;
-  const ncol = Math.max(1, Math.min(6, Math.floor((window.innerWidth - 32) / COLW) || 6));
-  const blocks = state.list.map(([cat, cols, items]) => ({ cat, cols, items, h: 26 + 18 + items.length * ROW + 14 }));
+  const R = state.ratings, COLW = 260, PAD = 16, ROW = 24, D = 8, GAP = 4;
+  const ncol = Math.max(2, Math.min(6, Math.floor((Math.max(window.innerWidth, 900) - 32) / COLW)));
+  const blocks = state.list.map(c => ({ c, h: 24 + 18 + c.items.length * ROW + 16 }));
   const colH = Array(ncol).fill(0), placed = [];
-  blocks.forEach(b => { const c = colH.indexOf(Math.min(...colH)); placed.push({ b, x: PAD + c * COLW, y: colH[c] }); colH[c] += b.h; });
-  const legendH = 50, W = PAD * 2 + ncol * COLW, H = legendH + Math.max(...colH) + PAD;
-  const cv = document.createElement('canvas'); const s = 2;
-  cv.width = W * s; cv.height = H * s; const g = cv.getContext('2d'); g.scale(s, s);
-  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
-  const circle = (x, y, color) => { g.beginPath(); g.arc(x, y, D, 0, Math.PI*2); g.fillStyle = color; g.fill(); g.strokeStyle = '#555'; g.lineWidth = 1; g.stroke(); };
-  g.fillStyle = '#000'; g.font = 'bold 22px system-ui, sans-serif'; g.textBaseline = 'middle';
-  g.fillText('Kinklist' + (state.name ? ' – ' + state.name : ''), PAD, 22);
-  g.font = '14px system-ui, sans-serif';
-  let lx = Math.max(PAD + 330, W - RATINGS.length * 120);
-  RATINGS.forEach(r => { circle(lx + D, 22, r.color); g.fillStyle = '#000'; g.fillText(r.name, lx + D*2 + 6, 22); lx += 120; });
+  blocks.forEach(b => { const k = colH.indexOf(Math.min(...colH)); placed.push({ b, x: PAD + k * COLW, y: colH[k] }); colH[k] += b.h; });
+  const legendRows = Math.ceil(R.length / Math.max(1, Math.floor((ncol * COLW - 300) / 120)));
+  const top = 30 + legendRows * 24, W = PAD * 2 + ncol * COLW, H = top + Math.max(0, ...colH) + PAD;
+  const cv = document.createElement('canvas'), s = 2; cv.width = W * s; cv.height = H * s;
+  const g = cv.getContext('2d'); g.scale(s, s); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.textBaseline = 'middle';
+  const circle = (x, y, col) => { g.beginPath(); g.arc(x, y, D, 0, Math.PI * 2); g.fillStyle = col; g.fill(); g.strokeStyle = '#444'; g.lineWidth = 1; g.stroke(); };
+  g.fillStyle = '#000'; g.font = 'bold 22px Arial'; g.fillText('Kinklist' + (state.name ? ' – ' + state.name : ''), PAD, 22);
+  g.font = '14px Arial';
+  let lx = 300, ly = 22;
+  R.forEach(r => { if (lx + 120 > W) { lx = 300; ly += 24; } circle(lx + D, ly, r.color); g.fillStyle = '#000'; g.fillText(r.name, lx + D * 2 + 6, ly); lx += 120; });
   placed.forEach(({ b, x, y }) => {
-    y += legendH;
-    g.fillStyle = '#000'; g.font = 'bold 18px system-ui, sans-serif'; g.fillText(b.cat, x, y + 12);
-    g.font = 'italic 12px system-ui, sans-serif'; g.fillStyle = '#444'; g.fillText(b.cols.join(', '), x, y + 32);
-    g.font = '13px system-ui, sans-serif';
-    b.items.forEach((item, i) => {
-      const cy = y + 44 + i * ROW + ROW / 2;
-      b.cols.forEach((col, j) => circle(x + D + 1 + j * (D*2 + 4), cy, RATINGS[state.r[key(b.cat,item,col)] || 0].color));
-      g.fillStyle = '#000'; g.fillText(item, x + b.cols.length * (D*2 + 4) + 8, cy);
+    const c = b.c; y += top;
+    g.fillStyle = '#000'; g.font = 'bold 17px Arial'; g.fillText(c.name, x, y + 11);
+    g.font = 'italic 12px Arial'; g.fillStyle = '#444'; g.fillText(c.cols.join(', '), x, y + 30);
+    g.font = '13px Arial';
+    c.items.forEach((it, i) => {
+      const cy = y + 42 + i * ROW + ROW / 2;
+      c.cols.forEach((_, k) => circle(x + D + 1 + k * (D * 2 + GAP), cy, (R[it.v[k] || 0] || R[0]).color));
+      g.fillStyle = '#000'; g.fillText(it.name + (it.c ? ' *' : ''), x + c.cols.length * (D * 2 + GAP) + 6, cy, COLW - c.cols.length * (D * 2 + GAP) - 14);
     });
   });
   cv.toBlob(blob => {
@@ -304,24 +555,22 @@ $('btnPng').addEventListener('click', () => {
   });
 });
 
-/* ---------- misc ---------- */
+/* ---------------- misc ---------------- */
 let toastT;
 function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3000); }
 
 (async function init(){
-  renderLegend();
+  try { const th = localStorage.getItem(THEME); if (th) document.documentElement.dataset.theme = th; } catch(e){}
   const h = location.hash.slice(1);
   if (h) {
     try {
-      state = await decodeHash(h); viewingShared = true;
+      state = await decodeHash(h); readOnly = true;
       $('bannerText').textContent = `You are viewing ${state.name ? state.name + "'s" : 'a'} shared list (read-only).`;
-      $('banner').classList.add('show'); $('name').disabled = true;
+      $('banner').classList.add('show');
     } catch(e) { state = load(); toast('That link could not be read.'); }
   } else state = load();
   render();
 })();
-$('btnOwn').addEventListener('click', () => { $('name').disabled = false; });
-window.addEventListener('hashchange', () => { if (location.hash.length > 1) location.reload(); });
 </script>
 </body>
 </html>
