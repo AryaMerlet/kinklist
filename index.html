@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kinklist</title>
+<meta name="description" content="Fill in a private preference list and share it with an anonymous link. Everything stays in your browser.">
+<style>
+:root{
+  --bg:#fff; --fg:#111; --muted:#666; --line:#ddd; --panel:#f4f4f6; --accent:#2b4a6f; --accent-fg:#fff;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#16171a; --fg:#eee; --muted:#9a9a9a; --line:#333; --panel:#202226; --accent:#5b8cc4; --accent-fg:#fff; }
+}
+:root[data-theme="dark"]{ --bg:#16171a; --fg:#eee; --muted:#9a9a9a; --line:#333; --panel:#202226; --accent:#5b8cc4; --accent-fg:#fff; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+header h1{margin:0;font-size:20px}
+#name{flex:0 1 200px;min-width:120px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;flex:1 1 auto}
+.legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.actions{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:6px 10px}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button:focus-visible,.dot:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.banner{margin:12px 16px 0;padding:10px 12px;border:1px solid var(--accent);border-radius:8px;display:none;gap:10px;align-items:center;flex-wrap:wrap}
+.banner.show{display:flex}
+main{padding:16px;columns:250px;column-gap:24px}
+.cat{break-inside:avoid;margin:0 0 18px}
+.cat h2{margin:0;font-size:18px;display:flex;align-items:center;gap:6px}
+.cat .sub{font-style:italic;color:var(--muted);font-size:12px;margin-bottom:4px}
+.row{display:flex;align-items:center;gap:6px;min-height:25px}
+.dots{display:flex;gap:4px;flex:none}
+.dot{width:18px;height:18px;border-radius:50%;border:1px solid #555;padding:0;flex:none}
+.edit-only{display:none}
+body.editing .edit-only{display:inline-block}
+.x{border:none;background:none;color:var(--muted);padding:0 4px;font-size:15px;line-height:1}
+.x:hover{color:#c00}
+#pop{position:absolute;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+#pop.show{display:block}
+#pop button{display:flex;align-items:center;gap:8px;width:100%;border:none;background:none;padding:4px 8px;text-align:left}
+#pop button:hover{background:var(--bg)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px)}
+.toast.show{opacity:1}
+footer{padding:8px 16px 24px;color:var(--muted);font-size:12px}
+@media (max-width:600px){ header{position:static} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Kinklist</h1>
+  <input id="name" placeholder="Your name (optional)" aria-label="Name">
+  <div class="legend" id="legend"></div>
+  <div class="actions">
+    <button class="primary" id="btnLink">Get link</button>
+    <button id="btnPng">Download image</button>
+    <button id="btnEdit" aria-pressed="false">Edit list</button>
+    <button id="btnReset">Reset</button>
+  </div>
+</header>
+<div class="banner" id="banner">
+  <span id="bannerText"></span>
+  <button id="btnOwn">Start my own list</button>
+</div>
+<main id="list"></main>
+<footer>
+  Everything stays in your browser. The share link holds your answers inside the link itself; no server stores them.
+  Based on the idea of KinkList by Goctionni (MIT) and KinkSheet.
+  <span class="edit-only"><br><button id="btnAddCat">+ Add category</button></span>
+</footer>
+<div id="pop" role="menu"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const RATINGS = [
+  { name: 'Not Entered', color: '#FFFFFF' },
+  { name: 'Favorite',    color: '#6DB5FE' },
+  { name: 'Like',        color: '#23FD22' },
+  { name: 'Okay',        color: '#FDFD6B' },
+  { name: 'Maybe',       color: '#DB6C00' },
+  { name: 'No',          color: '#920000' },
+];
+
+// [name, columns, items]
+const DEFAULT_LIST = [
+  ['Intimacy', ['General'], ['Romance / Affection','Hugging','Kissing (body)','Kissing (mouth)','Spooning','Using real names','Sleepover']],
+  ['Bodies', ['Self','Partner'], ['Skinny','Chubby','Muscle','Small breasts','Large breasts','Small cocks','Large cocks']],
+  ['Clothing', ['Self','Partner'], ['Clothed sex','Lingerie','Stockings','Heels','Leather','Latex','Uniform / costume','Cosplay','Formal clothing','Cross-dressing']],
+  ['Groupings', ['General'], ['You and 1 male','You and 1 female','You and trans female','You and trans male','You and 1 male, 1 female','You and 2 males','You and 2 females','Orgy']],
+  ['General', ['Giving','Receiving'], ['Handjob / fingering','Blowjob','Deep throat','Swallowing','Facials','Cunnilingus','Face-sitting','Edging','Teasing','Stripping / Disrobing','Mutual masturbation','JOI, SI','Self-humiliation']],
+  ['Penetration', ['Giving','Receiving'], ['Penetration','Strap-on penetration','Barebacking','Tantric / Yoni stimulation','Fingering','Object insertion']],
+  ['Special Positions', ['Giving','Receiving'], ['Free-hanging / love swings','Up against walls','69','Rope / chain suspension','Unseen actor','Stealth penetration']],
+  ['Ass play', ['Giving','Receiving'], ['Anal teasing','Anal toys','Anal sex, pegging','Rimming','Double penetration','Anal fisting']],
+  ['Restrictive', ['Self','Partner'], ['Gag','Collar','Leash','Chastity','Bondage (Light)','Bondage (Heavy)','Rope bondage','Mitts','Cuffs','Wall / cross mounting','Stockades','Blindfolds','Sensory deprivation','Encasement']],
+  ['Toys', ['Self','Partner'], ['Dildos','Plugs','Vibrators','Magic wands','Sybians','Sex machines','Sounding']],
+  ['Domination', ['Dominant','Submissive'], ['Dominant / Submissive','Domestic servitude','Slavery','Pet play','DD/lg, MD/lb','Discipline','Begging','Forced orgasm','Orgasm control','Orgasm denial','Ruined orgasm','Power exchange']],
+  ['Scenarios', ['Being center','Participating'], ['Medical','Pet play (soft)','Pet play (hard)','Human furniture','Human auctioning / appraisal','Slave training','Interrogation','Hypnotism','Unaware / Free use','Fake public use','Practical sex ed']],
+  ['No consent', ['Aggressor','Target'], ['Non-con / rape','Blackmail / coercion','Kidnapping','Drugs','Alcohol','Sleep play']],
+  ['Taboo', ['General'], ['Incest','Age gap','Ageplay','Raceplay','Bestiality','Necrophilia','War symbolism','Cheating','Exhibitionism','Voyeurism','Real public use']],
+  ['Surrealism', ['Self','Partner'], ['Futanari','Furry','Vore','Transformation','Tentacles','Monster or Alien']],
+  ['Fluids', ['General'], ['Blood','Watersports','Scat','Lactation','Diapers','Cum play']],
+  ['Degradation', ['Giving','Receiving'], ['Glory hole','Name calling','Humiliation']],
+  ['Touch & Stimulation', ['Actor','Subject'], ['Cock/Pussy worship','Ass worship','Foot play','Tickling','Sensation play','Electro stimulation']],
+  ['Misc. Fetish', ['Giving','Receiving'], ['Fisting','Gangbang','Breath play','Impregnation','Pregnancy','Feminization','Cuckold / Cuckquean']],
+  ['Pain', ['Giving','Receiving'], ['Light pain','Heavy pain','Hickies','Nipple clamps','Clothes pins','Breast torture','Caning','Flogging','Whips','Paddles','Beating','Spanking','Slapping (body)','Slapping (face)','Cock/Pussy slapping','Cock/Pussy torture','Hot wax','Scratching','Biting','Burning','Cutting','Bruising (short-lasting)','Markings (long-lasting)']],
+];
+
+const STORE_KEY = 'kinklist-v1';
+let state;          // { name, list:[[name,cols,items]], r: {key: ratingIndex} }
+let viewingShared = false;
+
+const $ = (id) => document.getElementById(id);
+const clone = (x) => JSON.parse(JSON.stringify(x));
+const key = (c, i, s) => c + '\u0001' + i + '\u0001' + s;
+
+function freshState(){ return { name: '', list: clone(DEFAULT_LIST), r: {} }; }
+
+function save(){
+  if (viewingShared) return;
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+function load(){
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (s && Array.isArray(s.list) && s.r) return s;
+  } catch(e) {}
+  return freshState();
+}
+
+/* ---------- rendering ---------- */
+function renderLegend(){
+  $('legend').innerHTML = RATINGS.map(r =>
+    `<span><span class="dot" style="background:${r.color}"></span>${r.name}</span>`).join('');
+}
+function esc(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function render(){
+  $('name').value = state.name || '';
+  const out = [];
+  state.list.forEach(([cat, cols, items], ci) => {
+    out.push(`<section class="cat"><h2>${esc(cat)}
+      <button class="x edit-only" data-act="delcat" data-ci="${ci}" title="Delete category" aria-label="Delete category ${esc(cat)}">✕</button></h2>
+      <div class="sub">${cols.map(esc).join(', ')}</div>`);
+    items.forEach((item, ii) => {
+      out.push(`<div class="row"><span class="dots">`);
+      cols.forEach((col) => {
+        const v = state.r[key(cat, item, col)] || 0;
+        out.push(`<button class="dot" data-k="${esc(key(cat,item,col))}" style="background:${RATINGS[v].color}"
+          aria-label="${esc(item)} – ${esc(col)}: ${RATINGS[v].name}" title="${esc(col)}: ${RATINGS[v].name}"></button>`);
+      });
+      out.push(`</span><span>${esc(item)}</span>
+        <button class="x edit-only" data-act="delitem" data-ci="${ci}" data-ii="${ii}" title="Delete item" aria-label="Delete ${esc(item)}">✕</button></div>`);
+    });
+    out.push(`<button class="edit-only" data-act="additem" data-ci="${ci}" style="margin-top:4px">+ Add item</button></section>`);
+  });
+  $('list').innerHTML = out.join('');
+}
+
+/* ---------- rating popover ---------- */
+let popKey = null;
+function openPop(btn){
+  popKey = btn.dataset.k;
+  const pop = $('pop');
+  pop.innerHTML = RATINGS.map((r, i) =>
+    `<button data-v="${i}" role="menuitem"><span class="dot" style="background:${r.color}"></span>${r.name}</button>`).join('');
+  const rc = btn.getBoundingClientRect();
+  pop.classList.add('show');
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  let left = rc.left + window.scrollX;
+  let top = rc.bottom + window.scrollY + 4;
+  left = Math.min(left, window.scrollX + document.documentElement.clientWidth - w - 8);
+  if (rc.bottom + h + 8 > window.innerHeight) top = rc.top + window.scrollY - h - 4;
+  pop.style.left = Math.max(8, left) + 'px';
+  pop.style.top = top + 'px';
+  pop.querySelector('button').focus();
+}
+function closePop(){ $('pop').classList.remove('show'); popKey = null; }
+
+$('pop').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-v]');
+  if (!b || popKey == null) return;
+  const v = +b.dataset.v;
+  if (v === 0) delete state.r[popKey]; else state.r[popKey] = v;
+  const k = popKey;
+  closePop(); save(); render();
+  const again = [...document.querySelectorAll('.dot[data-k]')].find(d => d.dataset.k === k);
+  if (again) again.focus();
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#pop') && !e.target.closest('.dot[data-k]')) closePop();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePop(); });
+
+$('list').addEventListener('click', (e) => {
+  const dot = e.target.closest('.dot[data-k]');
+  if (dot) {
+    if (viewingShared) { toast('This is a shared list. Click "Start my own list" to fill in yours.'); return; }
+    e.stopPropagation(); openPop(dot); return;
+  }
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const ci = +b.dataset.ci;
+  if (b.dataset.act === 'delcat') {
+    if (confirm(`Delete the category "${state.list[ci][0]}"?`)) { state.list.splice(ci, 1); save(); render(); }
+  } else if (b.dataset.act === 'delitem') {
+    state.list[ci][2].splice(+b.dataset.ii, 1); save(); render();
+  } else if (b.dataset.act === 'additem') {
+    const n = (prompt('New item name:') || '').trim();
+    if (n && !state.list[ci][2].includes(n)) { state.list[ci][2].push(n); save(); render(); }
+  }
+});
+
+$('btnAddCat').addEventListener('click', () => {
+  const n = (prompt('Category name:') || '').trim();
+  if (!n) return;
+  if (state.list.some(c => c[0] === n)) { toast('That category already exists.'); return; }
+  const cols = (prompt('Columns, separated by commas:', 'Self, Partner') || '').split(',').map(s => s.trim()).filter(Boolean);
+  state.list.push([n, cols.length ? cols : ['General'], []]); save(); render();
+});
+
+$('btnEdit').addEventListener('click', () => {
+  if (viewingShared) { toast('Start your own list first.'); return; }
+  const on = document.body.classList.toggle('editing');
+  $('btnEdit').setAttribute('aria-pressed', on);
+  $('btnEdit').textContent = on ? 'Done editing' : 'Edit list';
+});
+$('btnReset').addEventListener('click', () => {
+  if (!confirm('Clear all answers and restore the default list?')) return;
+  state = freshState(); viewingShared = false; history.replaceState(null, '', location.pathname); $('banner').classList.remove('show');
+  save(); render();
+});
+$('name').addEventListener('input', (e) => { state.name = e.target.value; save(); });
+
+/* ---------- share link: answers packed into the URL hash ---------- */
+function b64url(bytes){ let s=''; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function unb64url(str){ const s = atob(str.replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+async function pipe(bytes, stream){ return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer()); }
+
+async function encodeState(){
+  // ratings as one digit per cell, in list order
+  let digits = '';
+  state.list.forEach(([cat, cols, items]) => items.forEach(item => cols.forEach(col => digits += (state.r[key(cat,item,col)] || 0))));
+  const custom = JSON.stringify(state.list) !== JSON.stringify(DEFAULT_LIST);
+  const payload = JSON.stringify(custom ? { n: state.name, l: state.list, d: digits } : { n: state.name, d: digits });
+  let bytes = new TextEncoder().encode(payload), tag = 'r';
+  if (typeof CompressionStream !== 'undefined') { bytes = await pipe(bytes, new CompressionStream('deflate-raw')); tag = 'z'; }
+  return tag + b64url(bytes);
+}
+async function decodeHash(h){
+  let bytes = unb64url(h.slice(1));
+  if (h[0] === 'z') bytes = await pipe(bytes, new DecompressionStream('deflate-raw'));
+  const p = JSON.parse(new TextDecoder().decode(bytes));
+  const list = p.l || clone(DEFAULT_LIST);
+  const r = {}; let i = 0;
+  list.forEach(([cat, cols, items]) => items.forEach(item => cols.forEach(col => {
+    const v = +p.d[i++] || 0; if (v > 0 && v < RATINGS.length) r[key(cat,item,col)] = v;
+  })));
+  return { name: p.n || '', list, r };
+}
+
+$('btnLink').addEventListener('click', async () => {
+  const url = location.href.split('#')[0] + '#' + await encodeState();
+  try { await navigator.clipboard.writeText(url); toast('Link copied. Anyone with it can see your answers.'); }
+  catch(e) { prompt('Copy this link:', url); }
+});
+$('btnOwn').addEventListener('click', () => {
+  viewingShared = false; state = load(); history.replaceState(null, '', location.pathname);
+  $('banner').classList.remove('show'); render();
+});
+
+/* ---------- PNG export ---------- */
+$('btnPng').addEventListener('click', () => {
+  const COLW = 250, PAD = 16, ROW = 25, D = 9;
+  const ncol = Math.max(1, Math.min(6, Math.floor((window.innerWidth - 32) / COLW) || 6));
+  const blocks = state.list.map(([cat, cols, items]) => ({ cat, cols, items, h: 26 + 18 + items.length * ROW + 14 }));
+  const colH = Array(ncol).fill(0), placed = [];
+  blocks.forEach(b => { const c = colH.indexOf(Math.min(...colH)); placed.push({ b, x: PAD + c * COLW, y: colH[c] }); colH[c] += b.h; });
+  const legendH = 50, W = PAD * 2 + ncol * COLW, H = legendH + Math.max(...colH) + PAD;
+  const cv = document.createElement('canvas'); const s = 2;
+  cv.width = W * s; cv.height = H * s; const g = cv.getContext('2d'); g.scale(s, s);
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+  const circle = (x, y, color) => { g.beginPath(); g.arc(x, y, D, 0, Math.PI*2); g.fillStyle = color; g.fill(); g.strokeStyle = '#555'; g.lineWidth = 1; g.stroke(); };
+  g.fillStyle = '#000'; g.font = 'bold 22px system-ui, sans-serif'; g.textBaseline = 'middle';
+  g.fillText('Kinklist' + (state.name ? ' – ' + state.name : ''), PAD, 22);
+  g.font = '14px system-ui, sans-serif';
+  let lx = Math.max(PAD + 330, W - RATINGS.length * 120);
+  RATINGS.forEach(r => { circle(lx + D, 22, r.color); g.fillStyle = '#000'; g.fillText(r.name, lx + D*2 + 6, 22); lx += 120; });
+  placed.forEach(({ b, x, y }) => {
+    y += legendH;
+    g.fillStyle = '#000'; g.font = 'bold 18px system-ui, sans-serif'; g.fillText(b.cat, x, y + 12);
+    g.font = 'italic 12px system-ui, sans-serif'; g.fillStyle = '#444'; g.fillText(b.cols.join(', '), x, y + 32);
+    g.font = '13px system-ui, sans-serif';
+    b.items.forEach((item, i) => {
+      const cy = y + 44 + i * ROW + ROW / 2;
+      b.cols.forEach((col, j) => circle(x + D + 1 + j * (D*2 + 4), cy, RATINGS[state.r[key(b.cat,item,col)] || 0].color));
+      g.fillStyle = '#000'; g.fillText(item, x + b.cols.length * (D*2 + 4) + 8, cy);
+    });
+  });
+  cv.toBlob(blob => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'kinklist' + (state.name ? '-' + state.name.replace(/[^\w-]+/g, '_') : '') + '.png';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+});
+
+/* ---------- misc ---------- */
+let toastT;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3000); }
+
+(async function init(){
+  renderLegend();
+  const h = location.hash.slice(1);
+  if (h) {
+    try {
+      state = await decodeHash(h); viewingShared = true;
+      $('bannerText').textContent = `You are viewing ${state.name ? state.name + "'s" : 'a'} shared list (read-only).`;
+      $('banner').classList.add('show'); $('name').disabled = true;
+    } catch(e) { state = load(); toast('That link could not be read.'); }
+  } else state = load();
+  render();
+})();
+$('btnOwn').addEventListener('click', () => { $('name').disabled = false; });
+window.addEventListener('hashchange', () => { if (location.hash.length > 1) location.reload(); });
+</script>
+</body>
+</html>
